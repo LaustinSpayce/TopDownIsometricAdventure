@@ -19,10 +19,12 @@ public class PlayerNavMover : MonoBehaviour {
 
 	int floorMask;                      // A layer mask so that a ray can be cast just at gameobjects on the floor layer.
     float camRayLength = 100f;          // The length of the ray from the camera into the scene.
-	Vector3 mouseDownPosition;
+	Vector2 mouseDownPosition;
 	float timeSinceButtonDown;
 	bool shieldUp = false;
 	bool clicked = false;
+	Touch firstTouch;
+	Touch secondTouch;
 
 	// Use this for initialization
 	void Start () 
@@ -34,10 +36,15 @@ public class PlayerNavMover : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () 
-	{
-        if (Input.GetMouseButtonDown(0)) 
+	{	
+		if (Input.touchCount > 0)
 		{
-			mouseDownPosition = Input.mousePosition; // Determine the start position of the mouse on screen.
+			firstTouch = Input.GetTouch(0);
+		}
+
+        if (firstTouch.phase == TouchPhase.Began) 
+		{
+			mouseDownPosition = firstTouch.position; // Determine the start position of the mouse on screen.
 			// Debug.Log(mouseDownPosition);
 			timeSinceButtonDown = 0f;
 			clicked = true;
@@ -54,7 +61,7 @@ public class PlayerNavMover : MonoBehaviour {
 				shield.SetActive(true);
 			}
 			RotateBody();
-			if (Input.GetMouseButtonUp(0))
+			if (firstTouch.phase == TouchPhase.Ended)
 			{
 				shieldUp = false;
 				shield.SetActive(false);
@@ -64,21 +71,21 @@ public class PlayerNavMover : MonoBehaviour {
 			return;
 		}
 		
-		if (Input.GetMouseButtonUp(0) && clicked)
+		if (firstTouch.phase == TouchPhase.Ended && clicked)
 		{
-			// Debug.Log(Vector3.Magnitude(mouseDownPosition - Input.mousePosition)); // How long is the swipe
+			Debug.Log(Vector3.Magnitude(mouseDownPosition - firstTouch.position)); // How long is the swipe
 
 			// A tap or very short swipe will move the character to the location hit.
 			clicked = false;
 
-			if (Vector3.Magnitude(mouseDownPosition - Input.mousePosition) < smallSwipeLength )
+			if (Vector3.Magnitude(mouseDownPosition - firstTouch.position) < smallSwipeLength )
 			{
 				RaycastHit hit;
-				Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+				Ray ray = Camera.main.ScreenPointToRay(firstTouch.position);
 				if (Physics.Raycast(ray, out hit))
 					agent.SetDestination(hit.point);
 			}
-			else if (Vector3.Magnitude(mouseDownPosition - Input.mousePosition) < longSwipeLength)
+			else if (Vector3.Magnitude(mouseDownPosition - firstTouch.position) < longSwipeLength)
 			{
 				// Debug.Log("Attack!");
 				swordSwing.SetActive(true);
@@ -91,7 +98,7 @@ public class PlayerNavMover : MonoBehaviour {
 	void RotateBody()
 	{
 		RaycastHit hit;
-		Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+		Ray ray = Camera.main.ScreenPointToRay(firstTouch.position);
 		if (Physics.Raycast(ray, out hit))
 			{
 				Vector3 playerToMouse = hit.point - transform.position;
