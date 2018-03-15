@@ -7,13 +7,11 @@ public class CameraController : MonoBehaviour {
 
 	public CinemachineVirtualCamera[] Cameras;
 
-	int cameraArraySize;
 	int activeCamera;
 
 	// Use this for initialization
 	void Start ()
 	{
-	cameraArraySize = Cameras.Length;
 	activeCamera = 0;
 	Cameras[0].Priority = 10;
 	for (int i = 1; i < Cameras.Length; i++)
