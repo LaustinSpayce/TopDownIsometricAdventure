@@ -5,9 +5,6 @@ using UnityEngine.AI;
 
 public class PlayerNavMover : MonoBehaviour {
 
-	NavMeshAgent agent;
-
-	private Transform target;
 	public float smallSwipeLength = 100f;
 	public float longSwipeLength = 500f;
 
@@ -17,9 +14,12 @@ public class PlayerNavMover : MonoBehaviour {
 	public GameObject playerBody;
 	public GameObject shield;
 
+	// Private variables
+	NavMeshAgent agent;
+	Transform target;
 	int floorMask;                      // A layer mask so that a ray can be cast just at gameobjects on the floor layer.
     float camRayLength = 100f;          // The length of the ray from the camera into the scene.
-	Vector2 mouseDownPosition;
+	Vector2 touchDownPosition;
 	float timeSinceButtonDown;
 	bool shieldUp = false;
 	bool clicked = false;
@@ -37,6 +37,8 @@ public class PlayerNavMover : MonoBehaviour {
 	// Update is called once per frame
 	void Update () 
 	{	
+		if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return; // This doesn't do anything, I need a less hacky solution.
+
 		if (Input.touchCount > 0)
 		{
 			firstTouch = Input.GetTouch(0);
@@ -44,8 +46,8 @@ public class PlayerNavMover : MonoBehaviour {
 
         if (firstTouch.phase == TouchPhase.Began) 
 		{
-			mouseDownPosition = firstTouch.position; // Determine the start position of the mouse on screen.
-			// Debug.Log(mouseDownPosition);
+			touchDownPosition = firstTouch.position; // Determine the start position of the mouse on screen.
+			// Debug.Log(touchDownPosition);
 			timeSinceButtonDown = 0f;
 			clicked = true;
 			return;
@@ -60,7 +62,7 @@ public class PlayerNavMover : MonoBehaviour {
 				shieldUp = true;
 				shield.SetActive(true);
 			}
-			RotateBody();
+			RotateBody(firstTouch.position);
 			if (firstTouch.phase == TouchPhase.Ended)
 			{
 				shieldUp = false;
@@ -68,37 +70,53 @@ public class PlayerNavMover : MonoBehaviour {
 				clicked = false;
 				playerBody.transform.localRotation = Quaternion.identity;
 			}		
+			if (Input.touchCount > 1)
+			{
+				secondTouch = Input.GetTouch(1);
+				SetDestinationByTouch(secondTouch.position);
+			}
 			return;
 		}
 		
 		if (firstTouch.phase == TouchPhase.Ended && clicked)
 		{
-			Debug.Log(Vector3.Magnitude(mouseDownPosition - firstTouch.position)); // How long is the swipe
-
+			// Debug.Log(Vector3.Magnitude(touchDownPosition - firstTouch.position)); // How long is the swipe
 			// A tap or very short swipe will move the character to the location hit.
 			clicked = false;
 
-			if (Vector3.Magnitude(mouseDownPosition - firstTouch.position) < smallSwipeLength )
-			{
-				RaycastHit hit;
-				Ray ray = Camera.main.ScreenPointToRay(firstTouch.position);
-				if (Physics.Raycast(ray, out hit))
-					agent.SetDestination(hit.point);
-			}
-			else if (Vector3.Magnitude(mouseDownPosition - firstTouch.position) < longSwipeLength)
+			if (Vector3.Magnitude(touchDownPosition - firstTouch.position) < smallSwipeLength ) // Small Swipe sets target
+            {
+                SetDestinationByTouch(firstTouch.position);
+            }
+            else if (Vector3.Magnitude(touchDownPosition - firstTouch.position) < longSwipeLength) // Long Swipe 
 			{
 				// Debug.Log("Attack!");
+				var averagePosition = (touchDownPosition + firstTouch.position)/2;
 				swordSwing.SetActive(true);
-				RotateBody();
+				RotateBody(averagePosition); // Should attack in the direction of the middle of the swipe, so player swipes the enemies.
 			}
 		}
 
 	}
 
-	void RotateBody()
+    private bool SetDestinationByTouch(Vector2 touchPosition)
+    {
+        RaycastHit hit;
+        Ray ray = Camera.main.ScreenPointToRay(touchPosition);
+        if (Physics.Raycast(ray, out hit))
+		{
+            agent.SetDestination(hit.point);
+			return true;
+		}
+		else
+			return false;
+
+    }
+
+    void RotateBody(Vector2 touchPosition) // Rotate the body to face the Touch Position
 	{
 		RaycastHit hit;
-		Ray ray = Camera.main.ScreenPointToRay(firstTouch.position);
+		Ray ray = Camera.main.ScreenPointToRay(touchPosition);
 		if (Physics.Raycast(ray, out hit))
 			{
 				Vector3 playerToMouse = hit.point - transform.position;
