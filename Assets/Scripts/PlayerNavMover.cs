@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI; 
+using UnityEngine.EventSystems;
 
 public class PlayerNavMover : MonoBehaviour {
 
@@ -37,11 +38,15 @@ public class PlayerNavMover : MonoBehaviour {
 	// Update is called once per frame
 	void Update () 
 	{	
-		if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return; // This doesn't do anything, I need a less hacky solution.
 
 		if (Input.touchCount > 0)
 		{
 			firstTouch = Input.GetTouch(0);
+			if (EventSystem.current.IsPointerOverGameObject(firstTouch.fingerId))
+            {
+                // Debug.Log("Touched the UI");
+				return;
+            }
 		}
 
         if (firstTouch.phase == TouchPhase.Began) 
@@ -73,7 +78,16 @@ public class PlayerNavMover : MonoBehaviour {
 			if (Input.touchCount > 1)
 			{
 				secondTouch = Input.GetTouch(1);
-				SetDestinationByTouch(secondTouch.position);
+				if (secondTouch.phase == TouchPhase.Began)
+					{
+					if (EventSystem.current.IsPointerOverGameObject(secondTouch.fingerId))
+						{
+							// Debug.Log("Touched the UI");
+							return;
+						}
+					else
+					SetDestinationByTouch(secondTouch.position);
+					}
 			}
 			return;
 		}

@@ -6,57 +6,47 @@ using Cinemachine;
 public class CameraController : MonoBehaviour {
 
 	public CinemachineVirtualCamera[] Cameras;
+    public int initialCameraIndex = 0;
+
+    public int inactivePriority = 0;
+    public int activePriority = 10;
 
 	int activeCamera;
 
 	// Use this for initialization
 	void Start ()
 	{
-	activeCamera = 0;
-	Cameras[0].Priority = 10;
-	for (int i = 1; i < Cameras.Length; i++)
-		{
-			Cameras[i].Priority = 0;
-		}
+        SetCamera(initialCameraIndex);
 	}
 	
-	// Update is called once per frame
-	void Update () {
-		if (Input.GetKeyDown("space"))
-        {
-            DecreaseCameraIndex();
-        }
-    }
-
+    // Ray gave me these cool inline if statements to use. Neato.
     public void IncreaseCameraIndex()
     {
-        if (activeCamera < Cameras.Length - 1)
-        {
-            Cameras[activeCamera + 1].Priority = 10;
-            Cameras[activeCamera].Priority = 0;
-            activeCamera++;
-        }
-        else
-        {
-            Cameras[0].Priority	= 10;
-			Cameras[Cameras.Length - 1].Priority = 0;
-            activeCamera = 0;
-        }
+        Cameras[activeCamera].Priority = inactivePriority;
+        activeCamera = (activeCamera == Cameras.Length - 1 ? 0 : activeCamera + 1);
+        Cameras[activeCamera].Priority = activePriority;
     }
 
-	    public void DecreaseCameraIndex()
+    public void DecreaseCameraIndex()
     {
-        if (activeCamera > 0)
+        Cameras[activeCamera].Priority = inactivePriority;
+        activeCamera = (activeCamera == 0 ? Cameras.Length - 1 : activeCamera - 1);
+        Cameras[activeCamera].Priority = activePriority;
+    }
+
+    public void SetCamera(int cameraIndex)
+    {
+        if (cameraIndex > Cameras.Length)
         {
-            Cameras[activeCamera - 1].Priority = 10;
-            Cameras[activeCamera].Priority = 0;
-            activeCamera--;
+            Debug.Log("Invalid Camera Index! Reset to 0");
+            cameraIndex = 0;
         }
-        else
+        activeCamera = cameraIndex;
+        foreach (var camera in Cameras)
         {
-             Cameras[Cameras.Length - 1].Priority = 10;
-			Cameras[0].Priority = 0;
-            activeCamera = Cameras.Length - 1;
+            camera.Priority = inactivePriority;
         }
+        Cameras[cameraIndex].Priority = activePriority;
     }
 }
+
