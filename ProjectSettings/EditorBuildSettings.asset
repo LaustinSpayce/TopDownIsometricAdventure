@@ -6,5 +6,5 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/Thingie.unity
-    guid: 5bff4496067104b07a1a30e94a67e45e
+    path: Assets/Scenes/TestLevel.unity
+    guid: 68eceb8eec737455890c3a475e2f02e0
