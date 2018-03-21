@@ -1,7 +1,8 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AI; 
+using UnityEngine.AI;
 using UnityEngine.EventSystems;
 
 public class PlayerNavMover : MonoBehaviour {
@@ -14,6 +15,8 @@ public class PlayerNavMover : MonoBehaviour {
 	public GameObject swordSwing;
 	public GameObject playerBody;
 	public GameObject shield;
+
+	public Interactable focus;
 
 	// Private variables
 	NavMeshAgent agent;
@@ -38,6 +41,10 @@ public class PlayerNavMover : MonoBehaviour {
 	// Update is called once per frame
 	void Update () 
 	{	
+		if (target != null)
+		{
+			agent.SetDestination(target.position);
+		}
 
 		if (Input.touchCount > 0)
 		{
@@ -119,13 +126,45 @@ public class PlayerNavMover : MonoBehaviour {
         Ray ray = Camera.main.ScreenPointToRay(touchPosition);
         if (Physics.Raycast(ray, out hit))
 		{
-            agent.SetDestination(hit.point);
-			return true;
+			var interactable = hit.collider.GetComponent<Interactable>();
+			if (interactable != null)
+			{
+				SetFocus(interactable);
+				return true;
+			}
+            else 
+			{
+				agent.SetDestination(hit.point);
+				RemoveFocus();
+				return true;
+			}
 		}
 		else
 			return false;
 
     }
+
+    private void RemoveFocus()
+    {
+		if (focus != null)
+		{
+			focus.OnDeFocused();	 
+		}
+        focus = null;
+		StopFollowingTarget();
+    }
+
+    private void SetFocus(Interactable newFocus)
+    {
+		if (newFocus != focus)
+		{
+			if (focus != null)
+				focus.OnDeFocused();
+			focus = newFocus;
+			FollowTarget(newFocus);			
+		}		
+    	focus.OnFocused(transform);
+	}
 
     void RotateBody(Vector2 touchPosition) // Rotate the body to face the Touch Position
 	{
@@ -141,6 +180,18 @@ public class PlayerNavMover : MonoBehaviour {
 
             	playerBody.transform.rotation = newRotation;
 			}
+	}
+
+	void FollowTarget(Interactable newTarget)
+	{
+		target = newTarget.interactionTransform;
+		agent.stoppingDistance = newTarget.radius * 0.8f;
+	}
+
+	void StopFollowingTarget()
+	{
+		target = null;
+		agent.stoppingDistance = 0f;
 	}
 
 }
